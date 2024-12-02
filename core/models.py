@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from .Autism_level import AI as AI_severity
+from .ai import AI as AI_predict
 # Create your models here.
 
 from django.contrib.auth.models import AbstractUser
@@ -18,23 +20,22 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name', 'password']
 
-    # Override related_name for groups and user_permissions to avoid conflicts
+
     groups = models.ManyToManyField(
         'auth.Group',
-        related_name='core_user_set',  # Custom reverse relationship for groups
+        related_name='core_user_set',
         blank=True,
         help_text='The groups this user belongs to.',
         related_query_name='user',
     )
     user_permissions = models.ManyToManyField(
         'auth.Permission',
-        related_name='core_user_permissions_set',  # Custom reverse relationship for user_permissions
+        related_name='core_user_permissions_set',
         blank=True,
         help_text='Specific permissions for this user.',
         related_query_name='user',
     )
 
-from .ai import AI as AI_predict
 class MedicalData(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='medical_data')
     test_results = models.JSONField(null=True, blank=True)
@@ -49,12 +50,12 @@ class MedicalData(models.Model):
     A9 = models.BooleanField(default=False)
     A10 = models.BooleanField(default=False)
     ai_detection = models.BooleanField(default=False)
+    severity = models.CharField(max_length=20, choices=[('mild', 'Mild'), ('moderate', 'Moderate'), ('severe', 'Severe')], null=True, blank=True)
     additional_info = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        # Gather data to pass to the AI_predict function
         test_data = {
             "A1": self.A1,
             "A2": self.A2,
@@ -68,10 +69,8 @@ class MedicalData(models.Model):
             "A10": self.A10,
         }
 
-        # Call AI_predict to compute the output
         self.ai_detection = AI_predict(test_data)
-
-        # Save the instance
+        self.severity = AI_severity(test_data)
         super().save(*args, **kwargs)
 
 

@@ -1,20 +1,18 @@
 from django.shortcuts import render
-
-# Create your views here.
-
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
-
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from rest_framework.generics import ListAPIView
 from .serializers import UserSerializer
 from .models import MedicalData, User
-# Create the signup view
+from .models import Doctor
+from .serializers import DoctorSerializer
+from .serializers import MedicalDataSerializer
 class SignUpView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
@@ -23,20 +21,16 @@ class SignUpView(generics.CreateAPIView):
         return self.create(request, *args, **kwargs)
     
 
-from rest_framework.generics import ListAPIView
-from .models import Doctor
-from .serializers import DoctorSerializer
 
 class DoctorListView(ListAPIView):
-    queryset = Doctor.objects.all()  # Retrieve all Doctor records from the database
+    queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
 
-from .serializers import MedicalDataSerializer
 
 class MedicalDataDetailView(generics.RetrieveUpdateAPIView):
     queryset = MedicalData.objects.all()
     serializer_class = MedicalDataSerializer
-    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         """
@@ -49,7 +43,6 @@ class MedicalDataDetailView(generics.RetrieveUpdateAPIView):
 
 @api_view(['POST'])
 def create_medical_data(request):
-    # Ensure the 'user' exists and create MedicalData
     user_id = request.user.id
     if user_id is None:
         return Response({"detail": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
